@@ -1,0 +1,58 @@
+#color_picker_panel{
+    position: absolute;
+    left: 80%;
+    top: 25px;
+    background-color: white;
+    box-shadow:rgba(0, 0, 0, 0.3) 0px 0px 2px, rgba(0, 0, 0, 0.3) 0px 4px 8px;
+    border-radius: 8px;
+    z-index: 2;
+    overflow: hidden;
+}
+#color_picker{
+    margin: 5px 10px;
+    width: 190px;
+    height: 150px;
+}
+.react-colorful__pointer{
+    width: 18px !important;
+    height: 18px !important;
+}
+#color_picker_part{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 14px;
+    margin: 5px 5px;
+}
+#color_input{
+    width: 80px;
+}
+.color_panel_state_open{
+    width: 210px;
+}
+.color_panel_state_close{
+    width: 0px;
+    height: 0px;
+}
+#gradient_line{
+    width: 190px;
+    height: 10px;
+    border-radius: 2px;
+    float: left;
+    margin: 5px 10px;
+    position: relative;
+}
+.gradient_node{
+    position: absolute;
+    top: -1px;
+    border: 1px #7f7f7f solid;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    cursor: pointer;
+    z-index: 10;
+}
+#selectedNode{
+    border: 3px #7f7f7f solid;
+}

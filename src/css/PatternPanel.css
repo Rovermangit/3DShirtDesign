@@ -1,0 +1,44 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+.pattern_panel{
+    box-shadow:rgba(0, 0, 0, 0.3) 0px 0px 2px, rgba(0, 0, 0, 0.3) 0px 4px 8px;
+    padding-top: 7.5px;
+    border-radius: 15px;
+    width: 240px;
+    background-color: white;
+    position: absolute;
+    top: 25px;
+    left: 80%;
+    z-index: 1;
+}
+.ant-upload.ant-upload-select,.ant-upload-list-item-container{
+    width: 65px !important;
+    height: 65px !important;
+    vertical-align: middle;
+}
+.ant-upload.ant-upload-select div{
+    margin-top: 0px !important;
+}
+.ant-upload-list-item-container{
+    cursor: pointer !important;
+}
+.pattern_selected{
+    font-size: 14px;
+    padding-bottom: 7.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.img_selected{
+    width: 45px;
+    height: 45px;
+    border-radius: 5px;
+}
+.pattern_confirm{
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    padding-bottom: 7.5px;
+}
