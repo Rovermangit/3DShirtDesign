@@ -1,0 +1,104 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+#commonlogin_panel{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+#commonlogin_panel_left{
+    width: 70%;
+    height: 100%;
+    background:#f2f4ff;
+    overflow: hidden;
+}
+#commonlogin_panel_left_hover{
+    width: 100%;
+    height: 100%;
+    font-family: "微软雅黑";
+}
+#commonlogin_panel_left_hover>div{
+    margin-left: 25%;
+    width: 50%;
+    text-align: left;
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.64);
+}
+#commonlogin_panel_left_hover>div:first-child{
+    margin-top: 50px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 40px;
+    color: black;
+}
+.commonlogin_panel_right{
+    width: 30%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: white;
+    box-shadow:rgba(0, 0, 0, 0.3) 0px 0px 2px, rgba(0, 0, 0, 0.3) 0px 4px 8px;
+}
+.commonlogin_panel_right>div{
+    margin: 10px 0px;
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.64);
+}
+.commonlogin_panel_right>div:first-child{
+    font-size: 30px;
+    font-weight: bold;
+    color: black;
+}
+.commonlogin_panel_right .description{
+    color: rgba(0, 0, 0, 0.16);
+    margin-bottom: 25px;
+}
+#third_login_box{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#third_login_box>div{
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    background: #b7bbff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+    cursor: pointer;
+}
+#third_login_box>div svg{
+    width: 20px;
+    height: 20px;
+}
+#third_login_box>div path{
+    fill: white;
+}
+.commonlogin_button{
+    width: 80%;
+    margin-left: 10%;
+    height: 35px;
+    border-radius: 15px;
+    background: linear-gradient(30deg,#b7bbff,#a5a3ff);
+}
+.commonlogin_panel_right .remeber_box{
+    width: 90%;
+    margin-left: 10%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.commonlogin_panel_right .login-form-forgot{
+    color: #1677ff;
+    text-decoration: none;
+    background-color: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: color 0.3s;
+}

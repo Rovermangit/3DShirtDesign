@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { ChangePart } from './ChangePart';
 import { EditPanel } from './EditPanel';
 import { fabric } from 'fabric';
-import { Select } from 'antd';
+import { Select,message,Dropdown,Rate,Divider, Button,Modal,Form,Input,Space,Switch,InputNumber } from 'antd';
 import { debounce } from 'lodash';
 import { nanoid } from 'nanoid';
 import { picData } from '../data/picData';
@@ -16,9 +16,33 @@ import "../css/ModelPanel.css";
 import { ColorPanel } from './ColorPanel';
 import TreeComponent from './TreeComponent';
 import PatternPanel from './PatternPanel';
-import axios from 'axios'
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import {blockChain,_ntfMarket,ntfMarketAbi,_ntfContract,ntfContractAbi,chainDeployer} from "../data/blockData.js";
+const Web3 = require("web3");
+const web3 = new Web3(new Web3.providers.HttpProvider(blockChain));
+const ntfMarket = new web3.eth.Contract(JSON.parse(ntfMarketAbi),_ntfMarket);
+const ntfContract = new web3.eth.Contract(JSON.parse(ntfContractAbi),_ntfContract);
 const host = 'http://localhost:4444'
 const { Option } = Select;
+//在保存为json格式时仍然包含的属性并不包含一些需要包含的关键属性，故需要进行拓展
+fabric.Object.prototype.toObject = (function (toObject) {
+    return function () {
+        return fabric.util.object.extend(toObject.call(this), {
+            id:this.id,
+            _myType:this._myType,
+            selectable:this.selectable,
+            key:this.key,
+            _myPrice:this._myPrice,
+            text:this.text,
+            fontFamily:this.fontFamily,
+            fontWeight:this.fontWeight,
+            fontStyle:this.fontStyle,
+            underline:this.underline,
+            linethrough:this.linethrough,
+        });
+    };
+})(fabric.Object.prototype.toObject);
 //！！！当前仅限根目录节点选择操作！！！
 export default class ModelControl extends React.Component {
     init3DScene = () => {
@@ -37,6 +61,7 @@ export default class ModelControl extends React.Component {
         //初始化时钟工具
         this.clock = new THREE.Clock();
         //初始化显示模型
+        this.scene.clear();
         this.gltfLoader = new GLTFLoader();
         this.dracoLoader = new DRACOLoader();
         this.dracoLoader.setPath('./draco-master');
@@ -50,27 +75,26 @@ export default class ModelControl extends React.Component {
                 }
             })
             this.shirt = new THREE.Group();
+            this.shirt.castShadow = true;
+            this.shirt.receiveShadow = true;
             this.shirt.add(gltf.scene);
             this.scene.add(this.shirt);
         })
         //初始化基础灯源
         this.scene.add(new THREE.AmbientLight(0xdddddd));
         //添加聚光灯光源
-        const spotLight = new THREE.SpotLight(0xffffff, 2, 1000);
-        spotLight.shadow.mapSize.set(2048, 2048);
-        spotLight.position.set(-400, 100, -100);
-        //开启投影
-        spotLight.castShadow = true;
-        this.scene.add(spotLight);
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x000000, .7);
+        hemisphereLight.position.set(0, 0, 750);
+        this.scene.add(hemisphereLight);
         //初始化渲染器
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true,preserveDrawingBuffer: true });
         const renderer = this.renderer;
         renderer.setSize(window.innerWidth, window.innerHeight);
         //设置渲染器阴影效果
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         //设置背景色
-        renderer.setClearColor(new THREE.Color('rgb(243,245,246)'))
+        renderer.setClearColor(new THREE.Color('rgb(242,242,242)'))
         document.querySelector("#right_ope_box").appendChild(renderer.domElement);
         //初始化轨迹球控制器
         this.trackballcontrols = new TrackballControls(this.camera, renderer.domElement);
@@ -87,7 +111,8 @@ export default class ModelControl extends React.Component {
     myRender = () => {
         this.trackballcontrols.update(this.clock.getDelta())
         // this.stats.update();
-
+        let {isRotatingModel} = this.state;
+        if(isRotatingModel) this.shirt && this.shirt.rotateY(0.01);
         requestAnimationFrame(this.myRender);
         this.renderer.render(this.scene, this.camera);
     }
@@ -98,15 +123,21 @@ export default class ModelControl extends React.Component {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     //组件挂载完成执行的回调函数
-    componentDidMount() {
-        this.init3DScene();
-        this.myRender();
-        document.addEventListener('resize', this.onWindowResize, false);
-        this.create2dEditPanel();
-        this.setShirtTexture = debounce(this.setShirtTexture,100);
-        this.addTextContent = debounce(this.addTextContent,400);
-        this.addShirtPattern = debounce(this.addShirtPattern,400);
-        this.inputChangeElemPos = debounce(this.inputChangeElemPos,100);
+    async componentDidMount() {
+        //设置随机初始卫衣
+        let shirts = ['SWBLJYL','SWHOSLJ','SWBQMLJ','SWBZXDM'];
+        this.setState({shirtid:shirts[parseInt(Math.random()*4)]},()=>{
+            this.checkLoginStatus();
+            this.setInitialPrice();
+            this.init3DScene();
+            this.myRender();
+            document.addEventListener('resize', this.onWindowResize, false);
+            this.create2dEditPanel();
+            this.setShirtTexture = debounce(this.setShirtTexture,100);
+            this.addTextContent = debounce(this.addTextContent,400);
+            this.addShirtPattern = debounce(this.addShirtPattern,400);
+            this.inputChangeElemPos = debounce(this.inputChangeElemPos,100);
+        })
     }
     //组件卸载前执行的回调函数
     componentWillUnmount() {
@@ -115,10 +146,7 @@ export default class ModelControl extends React.Component {
     state = {
         leftExpandIcon: 'left_panel_close.svg',
         leftExpandState: true,
-        user: {
-            userAvatar: 'myavatar.jpg',
-            userName: '想与好运撞个满怀',
-        },
+        user: {},
         oDataForViewChg: {
             showType: 0,
             itemsPerRow: 4,
@@ -169,11 +197,8 @@ export default class ModelControl extends React.Component {
             itemsPerRow: 4,
             onlyOfficial: true,
             canBeUpload: false,
-            data: [
-                { src: 'project.svg', title: '项目1', hoverIfo: '暂存项目1', userType: 0, value: 'project1' },
-                { src: 'project.svg', title: '项目2', hoverIfo: '暂存项目2', userType: 0, value: 'project2' },
-                { src: 'project.svg', title: '项目3', hoverIfo: '暂存项目3', userType: 0, value: 'project3' },
-            ]
+            data:[],
+            onClickFn: 'openExistsProject',
         },
         myData: [],
         cancelSelectedType:'canvas',
@@ -183,9 +208,12 @@ export default class ModelControl extends React.Component {
             { title: '隐藏/显示', onPressKey: 'Ctrl + H', key: 'KeyH', info: '隐藏/显示当前所选节点及其子节点图层',onClickFn:'hideCurPic'},
             { title: '导出', onPressKey: 'Ctrl + E', key: 'KeyE', info: '导出时默认合并所有未隐藏图层进行导出',onClickFn:'exportCurPic'},
             { title: '申请专利', onPressKey: 'Ctrl + T', key: 'KeyT', info: '请合并为同一图案后再申请专利',onClickFn:'applyCurPic'},
+            { title: '保存项目', onPressKey: 'Ctrl + S', key: 'KeyS', info: '保存当前项目',onClickFn:'saveCurProject'},
         ],
+        //创建图案或文字元素后的索引值
         imgIdx:0,
         textIdx:0,
+        //选择框选项设置
         curElementOptions:[
             { title:'颜色',value:'color'},
             { title:'图案(仅文本)',value:'pattern'}
@@ -194,6 +222,104 @@ export default class ModelControl extends React.Component {
         curElementPic:null,
         curElementColor:'#000',
         curElementData:{x:0,y:0,angle:0,sizeX:0,sizeY:0},
+        //点击用户头像后显示的内容块
+        dropDownItems:[
+            {key:'dropItem_1',src:require("../pic/ModelPanel/self_detail.svg").default,title:'个人信息',onclick:()=>this.jumpLink2.click()},
+            {key:'dropItem_2',src:require("../pic/ModelPanel/message_detail.svg").default,title:'我的消息',onclick:()=>this.jumpLink2.click()},
+            {key:'dropItem_3',src:require("../pic/ModelPanel/project_detail.svg").default,title:'我的项目',onclick:()=>this.jumpLink2.click()},
+            {key:'dropItem_4',src:require("../pic/ModelPanel/collect_detail.svg").default,title:'我的收藏',onclick:()=>this.jumpLink2.click()},
+            {key:'dropItem_6',src:require("../pic/ModelPanel/login_out.svg").default,title:'退出登录',onclick:()=>this.loginOutFn()},
+        ],
+        //项目保存面板状态
+        saveModalOpenStatus:false,
+        //保存面板中预览图片数据
+        curProjectPreImg:'',
+        //当前操作的项目
+        curOpeObject:{},
+        //仅选用一个模型，故默认设置T恤为定值
+        shirtid:'',
+        //当前项目总价格
+        curPrice:0.00,
+        //版权审核通过后打开的面板状态与成功的数据
+        applyPicModalOpenStatus:false,
+        curApplyPic:{},
+        web3:{},
+        isRotatingModel:false,
+        cameraTargetPos: {
+            front: {
+                x: 0, z: 200, y: 0
+            },
+            left: {
+                x: -200, z: 0, y: 0
+            },
+            right: {
+                x: 200, z: 0, y: 0
+            },
+            back: {
+                x: 0, z: -200, y: 0
+            }
+        }
+    }
+    //移动镜头到指定位置
+    animateCamera = (direction)=>{
+        let {cameraTargetPos} = this.state;
+        this.camera.position.x = cameraTargetPos[direction].x;
+        this.camera.position.y = cameraTargetPos[direction].y;
+        this.camera.position.z = cameraTargetPos[direction].z;
+        this.camera.lookAt(this.scene.position);
+        this.trackballcontrols.update();
+    }
+    //改变模型旋转状态
+    changeModelRotating = ()=>{
+        let {isRotatingModel} = this.state;
+        this.setState({isRotatingModel:!isRotatingModel});
+    }
+    //初始获取当前用户所有项目数据
+    getCurUserProjectData = ()=>{
+        let {user,oDataForMyProject} = this.state;
+        if(JSON.stringify(user) === '{}')return;
+        else
+            axios.get(`${host}/getUserProject`,{
+                params:{userid:user.userid}
+            }).then((res)=>{
+                let {data} = res;
+                if(data.length === 0)return;
+                for(let perObj of data){
+                    oDataForMyProject.data.push({src:'project.svg',title:perObj.projectname,hoverIfo:perObj.projectname,userType:0,value:JSON.stringify(perObj)});
+                }
+                this.setState({oDataForMyProject});
+            })
+    }
+    //设置初始价格
+    setInitialPrice = ()=>{
+        let {shirtid} = this.state;
+        axios.get(`${host}/getSomeShirt`,{
+            params:{
+                shirtid
+            }
+        }).then((res)=>{
+            this.setState({curPrice:res.data[0].price});
+        })
+    }
+    //退出当前账号登录
+    loginOutFn = () => {
+        let user = {};
+        localStorage.removeItem("commonUserData");
+        this.setState({ user }, () => {
+            this.jumpLink.click();
+        })
+    }
+    //检查当前是否已经登录
+    checkLoginStatus = ()=>{
+        let userData = localStorage.getItem("commonUserData");
+        if(!userData){
+            message.error("当前未登录，即将为您跳转到登录界面");
+            if(this.jumpLink)setTimeout(()=>this.jumpLink.click(),3000);
+        }else{
+            this.setState({user:JSON.parse(userData)},()=>{
+                this.getCurUserProjectData();
+            });
+        }
     }
     //切换左部操作栏显示状态
     changeLeftPanel = () => {
@@ -345,10 +471,12 @@ export default class ModelControl extends React.Component {
     //添加贴图到模型上
     addShirtPattern = (imgSrc) => {
         const canvas = this.canvas;
-        let {imgIdx} = this.state;
+        let {imgIdx,curPrice} = this.state;
         //判别当前图片数据是网站自带图片数据还是用户临时自上传图片，若为自上传则已在图片数据最开始处增加了@@@字符串
         fabric.Image.fromURL(imgSrc.indexOf('@@@') >= 0 ? imgSrc.substring(3) : require(`../pic/ModelPanel/${imgSrc}`), (img)=>{
             if (img.width > 50 || img.height > 50) img.scale(0.5);
+            curPrice += 5.5;
+            img._myPrice = 5.5;
             //设置img的key为唯一标识
             img.key = nanoid();
             imgIdx += 1;
@@ -359,7 +487,7 @@ export default class ModelControl extends React.Component {
             canvas.setActiveObject(img);
             let object = {key:img.key,title:img.title,isLeaf:true};
             this.treeComponent.addTreeData((object));
-            this.setState({imgIdx});
+            this.setState({imgIdx,curPrice});
         })
         canvas.renderAll();
     }
@@ -444,27 +572,33 @@ export default class ModelControl extends React.Component {
     addTextContent = (text) => {
         //接受子组件传递的iText对象，根据画布需进行重新调整
         const canvas = this.canvas;
-        let {textIdx} = this.state;
+        let {textIdx,curPrice} = this.state;
         //克隆元素的正确方法，利用clone方法后得到cloned进行克隆
-        text.clone((cloned)=>{
-            cloned._myType = 'text';
-            cloned.set('fontSize', text.fontSize + 10);
-            cloned.set('selectable', true);
-            //设置新增元素的key为唯一标志
-            cloned.key = nanoid();
-            //自增项设置加一
-            textIdx += 1;
-            cloned.title = '文本_'+textIdx;
-            canvas.add(cloned);
-            //中心化元素，并选中该元素
-            canvas.centerObject(cloned);
-            canvas.setActiveObject(cloned);
-            canvas.renderAll();
-            //添加到树结构数据中
-            let object = {key:cloned.key,title:cloned.title,isLeaf:true};
-            this.treeComponent.addTreeData((object));
-            this.setState({textIdx});
+        curPrice += 4;
+        let Text = new fabric.IText(text.text,{
+            fontFamily:text.fontFamily,
+            fontWeight:text.fontWeight,
+            fontStyle:text.fontStyle,
+            underline:text.underline,
+            linethrough:text.linethrough,
+            selectable:true,
+            fill:text.fill,
+            scaleX:1,
+            scaleY:1
         })
+        Text._myType = 'text';
+        Text._myPrice = 4;
+        Text.key = nanoid();
+        textIdx += 1;
+        canvas.add(Text);
+        //中心化元素，并选中该元素
+        canvas.centerObject(Text);
+        canvas.setActiveObject(Text);
+        canvas.renderAll();
+        //添加到树结构数据中
+        let object = {key:Text.key,title:'文本_'+textIdx,isLeaf:true};
+        this.treeComponent.addTreeData((object));
+        this.setState({textIdx,curPrice});
     }
     //选中节点后图层也选中的操作
     selectedFn = (data)=>{
@@ -503,7 +637,7 @@ export default class ModelControl extends React.Component {
         //复制数据
         const {type,targetKeys,copyKeys,myData} = data;
         let canvas = this.canvas;
-        let {clipBoard} = this.state;
+        let {clipBoard,curPrice} = this.state;
         switch(type){
             case 'clipNode':
                 if(!targetKeys || targetKeys.length === 0)return;
@@ -557,8 +691,10 @@ export default class ModelControl extends React.Component {
                         loop(pasteObjects,myData[idx1]);
                     }
                     //将新增节点添加到目标节点，同时添加新增标记
+                    //设置临时价格标记，用于与初始价格相加得出当前价格
                     for(let object of pasteObjects){
                         object.isNew = true;
+                        curPrice += object._myPrice;
                         if(isRoot)parentNode.add(object);
                         else parentNode.addWithUpdate(object);
                     }
@@ -585,6 +721,7 @@ export default class ModelControl extends React.Component {
                     else{
                         delParents[idx].removeWithUpdate(delObjects[idx]);
                     }
+                    curPrice -= delObjects[idx]._myPrice;
                 }
                 canvas.discardActiveObject();
                 canvas.renderAll();
@@ -592,8 +729,13 @@ export default class ModelControl extends React.Component {
             case 'reGroupNode':
                 let {parentKey} = data;
                 let reGroupObjects = clipBoard;
+                let groupPrice = 0.00;
+                for(let object of reGroupObjects){
+                    groupPrice += object._myPrice;
+                }
                 let newGroup = new fabric.Group(reGroupObjects,{canvas:canvas,key:parentKey});
                 newGroup._myType = 'group';
+                newGroup._myPrice = groupPrice;
                 //仅在根目录添加（后续可进行进一步改动）
                 canvas.add(newGroup);
                 canvas.setActiveObject(newGroup);
@@ -604,7 +746,7 @@ export default class ModelControl extends React.Component {
             default:
                 return;
         }
-        this.setState({clipBoard});
+        this.setState({clipBoard,curPrice});
     }
     //循环遍历查找节点
     loopCheckCanvas = (data)=>{
@@ -645,6 +787,9 @@ export default class ModelControl extends React.Component {
                 break;
             case 'applyCurPic':
                 this.applyCurPic();
+                break;
+            case 'saveCurProject':
+                this.saveCurProject();
                 break;
             default:
                 return;
@@ -709,10 +854,8 @@ export default class ModelControl extends React.Component {
                 pos.push({left:object.left,top:object.top});
             }
         }
-        //添加到group图层中以便导出范围与元素刚好符合所选项
-        let exportGrp = new fabric.Group(visPics,{canvas:canvas});
         //将导出图层以二进制流形式导入临时a标签中，并点击以进行下载
-        picData = exportGrp.toDataURL("image/png");
+        picData = canvas.toDataURL("image/jpeg");
         this.getBlob(picData).then(blob=>{
             if(!flag)this.saveAs(blob,'未命名导出图层');
         });
@@ -751,15 +894,62 @@ export default class ModelControl extends React.Component {
         tmp.download = filename;
         tmp.click();
     }
-    //申请专利函数（暂无连接，故仅展示）
+    //申请专利函数
     applyCurPic = ()=>{
         let applyForCopyRightPic = this.exportCurPic(true);
+        let {user} = this.state;
         //通过后端开启子线程调用python文件进行图片筛查
         axios.post(`${host}/picSearch`,{
-            imgData:applyForCopyRightPic
-        }).then((res)=>{
-            console.log("申请专利函数");
+            imgData:applyForCopyRightPic,
+            userid:user.userid       
+        }).then(async (res)=>{
+            let {data} = res;
+            if(!data.result){
+                message.error(`当前所申请图案存在疑似雷同图，疑似度为${data.confidence}，请在冷却期过后重新上传或申请人工复核`)
+            }else{
+                let token_id = await ntfContract.methods.mintNFT(user.accountaddress,data.sourcepic).send({from:chainDeployer,gas:'1000000'});
+                token_id = +token_id.events.NFTMinted.returnValues.tokenId;
+                this.setState({applyPicModalOpenStatus:true,curApplyPic:{...data,token_id}})
+                message.success(`申请成功！请问您是否要加入到平台图片市场以获取额外收益呢？`);
+            }
         })
+    }
+    //关闭版权申请详情面板
+    closeApplyCopyrightModal = ()=>{
+        this.setState({applyPicModalOpenStatus:false});
+    }
+    //点击提交版权详情
+    submitCopyrightDetail = async(values)=>{
+        //提交时默认值设置
+        values.isallowshop = values.isallowshop === undefined || values.isallowshop === true?1:0;
+        values.description = values.description.length === 0?"暂无描述":values.description;
+        values.copyrightname = values.copyrightname.length === 0?"未命名图像版权":values.copyrightname;
+        values.buyoutprice = values.isallowshop?values.price:0;
+        let {user,curApplyPic} = this.state;
+        try{
+            if(values.isallowshop){
+                //判断是否加入图片市场进行售卖，若加入则需要交易认证，同时设置价格并添加到市场中
+                await ntfContract.methods.approve(_ntfMarket,curApplyPic.token_id).send({from:user.accountaddress,gas:'1000000'});
+                let PRICE = web3.utils.toWei(values.price+'','ether');
+                await ntfMarket.methods.listItem(_ntfContract, curApplyPic.token_id,PRICE).send({from:user.accountaddress,gas:'1000000'});
+            }
+            axios.get(`${host}/addUserCopyright`,{
+                params:{
+                    ...values,
+                    userid:user.userid,
+                    copyrighturl:curApplyPic.sourcepic
+                }
+            }).then((res)=>{
+                let {data}  = res;
+                if(data === 'success'){
+                    message.success("新增成功！请到个人中心查看详情。");
+                    this.applyCopyrightForm.resetFields();
+                    this.closeApplyCopyrightModal();
+                }
+            })
+        }catch(err){
+            message.error("加入市场时价格不可低于0元！给予警告一次！");
+        }
     }
     //确认当前选中图案，将把图案用于元素样式进行直接覆盖,当前仅适用于文字元素
     confirmBgCurPattern = (value)=>{
@@ -981,11 +1171,75 @@ export default class ModelControl extends React.Component {
         canvas.discardActiveObject();
         canvas.renderAll();
     }
+    //打开保存项目界面
+    openSaveModal = ()=>{
+        let renderer = this.renderer;
+        let curProjectPreImg = renderer.domElement.toDataURL("image/jpeg");
+        this.setState({saveModalOpenStatus:true,curProjectPreImg});
+    }
+    //关闭保存项目界面
+    closeSaveModal = ()=>{
+        this.editForm.resetFields();
+        this.setState({saveModalOpenStatus:false})
+    }
+    //保存项目！！暂不考虑修改项目
+    saveCurProject = (values)=>{
+        let {projectname,description} = values;
+        let {oDataForMyProject,shirtid,curPrice} = this.state;
+        let {user} = this.state;
+        let canvas = this.canvas;
+        //树组件获取当前所有节点数据
+        let curLayerData = this.treeComponent.getAllData();
+        //设置保存时的默认参数
+        if(!projectname)projectname = "未命名项目";
+        if(!description)description = '';
+        //设置post的参数值，包括canvas的json数据与所有图层数据
+        let obj = {projectname,description,jsondata:JSON.stringify(canvas.toJSON()),userid:user.userid,layerdata:JSON.stringify(curLayerData),preImg:this.renderer.domElement.toDataURL("image/jpeg"),shirtid,curPrice};
+        //此处都为新增项目
+        axios.post(`${host}/saveModelProject`,obj).then(res=>{
+            let {data} = res;
+            let newObj = {projectname:obj.projectname,projecturl:data.fileUrl};
+            //新增到数据库表的同时新增到我的项目中
+            oDataForMyProject.data.unshift({src:'project.svg',title:newObj.projectname,hoverIfo:newObj.projectname,userType:0,value:JSON.stringify(newObj)});
+            message.success("项目新增成功了！可在我的项目中进行查看");
+            this.setState({oDataForMyProject});
+        })
+        this.closeSaveModal();
+    }
+    //打开我的项目
+    openExistsProject = (values)=>{
+        let obj = JSON.parse(values);
+        let canvas = this.canvas;
+        message.info("数据即将更换，请注意保存内容！");
+        //读取服务器端存储的json数据内容，返回前端进行重新读取
+        axios.get(`${host}/readStaSource`,{
+            params:{
+                fileUrl:obj.projecturl
+            }
+        }).then((res)=>{
+            let {data} = res;
+            data = JSON.parse(data);
+            //重新设置底衫尺寸
+            for(let perObj of data.canvasData.objects){
+                if(perObj._myType === 'modelPart'){
+                    perObj.scaleX = "0.302";
+                    perObj.scaleY = "0.302";
+                }
+            }
+            //canvas与树组件重新加载数据
+            canvas.loadFromJSON(data.canvasData);
+            this.treeComponent.setInitialData(data.layerData);
+            this.setState({curPrice:data.curPrice});
+            setTimeout(()=>this.setShirtTexture(),100);
+        })
+    }
     //组件挂载渲染函数
     render() {
-        const { user, leftExpandState, leftExpandIcon, oDataForMyProject, oDataForTextAdd, oDataForModelChg, oDataForPicChg, curShirtPartInput, curShirtPart, oddEditOptions,curElementBgType,curElementOptions,curElementPic,curElementColor,curElementData} = this.state;
+        const { user, leftExpandState, leftExpandIcon,oDataForViewChg, oDataForMyProject, oDataForTextAdd, oDataForModelChg, oDataForPicChg, curShirtPartInput, curShirtPart, oddEditOptions,curElementBgType,curElementOptions,curElementPic,curElementColor,curElementData,dropDownItems,saveModalOpenStatus,curProjectPreImg,curPrice,applyPicModalOpenStatus,curApplyPic} = this.state;
         return (
             <div id="edit_panel">
+                <Link to={{pathname:'/commonlogin'}} ref={(elem)=>this.jumpLink = elem} style={{display:'none'}}/>
+                <Link to={{pathname:'/webindex/selfdetail'}} ref={(elem)=>this.jumpLink2 = elem} style={{display:'none'}}/>
                 <div id="left_ope_box" className={leftExpandState ? 'left_ope_box_open' : 'left_ope_box_close'}>
                     <div id="left_ope_box_title">
                         <div id="left_ope_box_title_left">
@@ -994,14 +1248,60 @@ export default class ModelControl extends React.Component {
                         </div>
                         <div id="left_ope_box_title_right">
                             <span style={{ display: user && JSON.stringify(user) !== '{}' ? 'none' : 'block' }}>未登录</span>
-                            <img id="user_avatar" src={require(`../pic/ModelPanel/${user.userAvatar}`)} alt="暂时无法显示" />
+                            <Dropdown trigger={['click']} dropdownRender={()=>
+                                (
+                                    <div id='self_detail_panel_mini'>
+                                        <div id='self_detail_mini_top'>
+                                            <img src={user.avatar?`${host}/getStaSource?sourceUrl=${user.avatar}`:require('../pic/ModelPanel/user_temp_avatar.png')} alt="暂时无法显示"/>
+                                            <div>
+                                                <div>{user.username}</div>
+                                                <div><span>ID：{user.userid}</span><span>余额：{user.account}元</span></div>
+                                            </div>
+                                        </div>
+                                        <div id="self_detail_mini_rate">
+                                            <span>信用评级：</span>
+                                            <Rate disabled defaultValue={user.credit} />
+                                        </div>
+                                        <Divider/>
+                                        <div className='self_detail_mini_somedetail'>
+                                            <div className='self_detail_mini_title'>我的订单</div>
+                                            <div className='self_detail_mini_container'>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/wait_pay.svg").default}/><span>待付款</span></div>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/wait_post.svg").default}/><span>待发货</span></div>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/wait_receive.svg").default}/><span>待收货</span></div>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/refund.svg").default}/><span>退款/售后</span></div>
+                                            </div>
+                                        </div>
+                                        <Divider/>
+                                        <div className='self_detail_mini_somedetail'>
+                                            <div className='self_detail_mini_title'>我的版权</div>
+                                            <div className='self_detail_mini_container'>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/copyright_all.svg").default}/><span>我的版权</span></div>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/apply_all.svg").default}/><span>申请记录</span></div>
+                                                <div onClick={()=>this.jumpLink2.click()}><img alt='' src={require("../pic/ModelPanel/deal_all.svg").default}/><span>交易记录</span></div>
+                                            </div>
+                                        </div>
+                                        <Divider/>
+                                        <ul className='self_detail_mini_ul'>
+                                            {dropDownItems.length !== 0?dropDownItems.map((item)=>
+                                            <li key={item.key} onClick={()=>item.onclick()}>
+                                                <img alt='' src={item.src}/>
+                                                <span>{item.title}</span>
+                                            </li>
+                                            ):''}
+                                        </ul>
+                                    </div>
+                                )
+                            }>
+                                <img id="user_avatar" style={{ display: user && JSON.stringify(user) !== '{}' ? 'block' : 'none' }} src={user.avatar?`${host}/getStaSource?sourceUrl=${user.avatar}`:require('../pic/ModelPanel/user_temp_avatar.png')} alt="暂时无法显示"/>
+                            </Dropdown>
                         </div>
                     </div>
                     <div id="cur_sum_amount">
                         当前单件预估价格为：￥
-                        <input type='text' readOnly />
+                        <input type='text' readOnly value={curPrice.toFixed(2)} style={{textAlign:'center',fontSize:'18px'}}/>
                     </div>
-                    <ChangePart svg="user_project.svg" title="我的项目" data={oDataForMyProject} />
+                    <ChangePart svg="user_project.svg" title="我的项目" data={oDataForMyProject} openExistsProject={(values)=>this.openExistsProject(values)}/>
                     <ChangePart svg="change_model.svg" title="底衫切换" data={oDataForModelChg} openEditPanel={() => this.openEditPanel()} />
                     <ChangePart svg="change_pic.svg" title="贴图添加" data={oDataForPicChg} addShirtPattern={(value) => this.addShirtPattern(value)} />
                     <ChangePart svg="add_text.svg" title="文本添加" data={oDataForTextAdd} addTextContent={(value) => this.addTextContent(value)} />
@@ -1133,7 +1433,79 @@ export default class ModelControl extends React.Component {
                     </div>
                     <canvas id="modal_canvas"></canvas>
                 </div>
-                <div id="right_ope_box"></div>
+                <div id="right_ope_box">
+                    <ul id='right_ope_toolbox'>
+                        {oDataForViewChg && oDataForViewChg.data.map((item)=>
+                        <li key={item.title} onClick={()=>this.animateCamera(item.value)}>
+                            <img alt='' src={require(`../pic/ModelPanel/${item.src}`)} title={item.title}/>
+                            <div>{item.title}</div>
+                        </li>
+                        )}
+                        <li key={"model_spin"} onClick={this.changeModelRotating}>
+                            <img alt='' src={require(`../pic/ModelPanel/picForDirection/model_spin.svg`).default} title={'模型旋转'}/>
+                            <div>3D旋转</div>
+                        </li>
+                    </ul>
+                    <Button danger id='model_end_ope' onClick={this.openSaveModal}>结束定制</Button>
+                </div>
+                <Modal title={"保存项目"} open={saveModalOpenStatus} footer={null} onCancel={this.closeSaveModal}>
+                    <div className='model_project_preimg' style={{background:`url(${curProjectPreImg})`}}/>
+                    <div className='model_project_title'>项目预览图</div>
+                    <Form onFinish={this.saveCurProject} ref={(elem)=>this.editForm = elem} labelCol={{ span: 6 }} wrapperCol={{ span: 14 }} style={{ width: '100%' }}>
+                        <Form.Item className="edit_form" name="projectname" label="项目名称">
+                            <Input allowClear placeholder="请输入项目名称" />
+                        </Form.Item>
+                        <Form.Item className="edit_form" name="description" label="项目描述">
+                            <Input.TextArea rows={4} allowClear placeholder="请输入项目相关描述" />
+                        </Form.Item>
+                        <Form.Item className="edit_form" style={{textAlign:'right',marginLeft:'30%'}}>
+                            <Space>
+                                <Button onClick={this.closeSaveModal} htmlType="reset" danger>取消</Button>
+                                <Button type="primary" htmlType="submit">提交</Button>
+                            </Space>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+                <Modal className='apply_copyright_panel' title={"版权申请"} open={applyPicModalOpenStatus} footer={null} onCancel={this.closeApplyCopyrightModal}>
+                    <div className='apply_copyright_panel_left'>
+                        <div className='apply_copyright_imgBox' style={{background:`url(${host}/getStaSource?sourceUrl=${curApplyPic.sourcepic})`}}/>
+                    </div>
+                    <div className='apply_copyright_panel_right'>
+                        <Form onFinish={this.submitCopyrightDetail} ref={(elem)=>this.applyCopyrightForm = elem} name='apply_copyright_form' labelCol={{span:6}} wrapperCol={{span:14}}>
+                            <div className='information'>恭喜您！您的所申请的版权最高疑似度为<span>{curApplyPic.confidence}</span></div>
+                            <div className='description'>请填写信息并确认相关事宜。</div>
+                            <Form.Item name={"blockchaintokenid"} label={"NFTID号："} initialValue={curApplyPic.token_id}>
+                                <Input disabled />
+                            </Form.Item>
+                            <Form.Item name={"copyrightname"} label={"版权名称："}>
+                                <Input allowClear placeholder='请输入您的版权名称'/>
+                            </Form.Item>
+                            <Form.Item name={"isallowshop"} label={"进行售卖："} valuePropName="checked">
+                                <Switch defaultChecked checkedChildren={"是"} unCheckedChildren={"否"}/>
+                            </Form.Item>
+                            <Form.Item shouldUpdate={(preValues,curValues)=>preValues.isallowshop !== curValues.isallowshop} label={"售卖价格："}>
+                                {({getFieldValue})=>{
+                                    let value = getFieldValue("isallowshop");
+                                    return (
+                                        <Form.Item name={"price"} initialValue={["0"]}>
+                                            {value || value === undefined ?<InputNumber min={0}  key={"inputbox1"} prefix={"￥"}/>: <InputNumber key={"inputbox2"} min={0} disabled prefix={"￥"}/>}
+                                        </Form.Item>
+                                    )
+                                }}
+                            </Form.Item>
+                            <div className='description description2'>注：恶意标价引起市场均价波动将予以封号处理</div>
+                            <Form.Item name={"description"} label="相关描述">
+                                <Input.TextArea rows={4} allowClear placeholder="请输入您所拥有的版权相关描述" />
+                            </Form.Item>
+                            <Form.Item style={{textAlign:'right',marginLeft:'52%'}}>
+                                <Space>
+                                    <Button htmlType="reset">重置</Button>
+                                    <Button type="primary" htmlType="submit">提交</Button>
+                                </Space>
+                            </Form.Item>
+                        </Form>
+                    </div>
+                </Modal>
                 <EditPanel ref={(element) => { this.editPanel = element }} id="my_edit_panel"></EditPanel>
             </div>
         )

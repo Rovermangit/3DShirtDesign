@@ -392,6 +392,14 @@ export default class TreeComponent extends React.Component {
         let selectedKeys = data;
         this.setState({selectedKeys});
     }
+    //获取所有数据
+    getAllData = ()=>{
+        return this.state.myData
+    }
+    //设置初始数据
+    setInitialData = (data)=>{
+        this.setState({myData:[].concat(data)});
+    }
     render() {
         const { myData, treeEditOptions, oddEditOptions, rightClickPanelPosX, rightClickPanelPosY, rightClickPanelState, selectedKeys, expandedKeys } = this.state;
         return (

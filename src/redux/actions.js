@@ -1,6 +1,6 @@
-export const changeShirtScheme = data => dispatch =>{
+export const updateUserData = data => dispatch =>{
     dispatch({
-        type:'changeShirtScheme',
+        type:'updateUserData',
         payload: data
     })
 }

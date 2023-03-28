@@ -1,0 +1,163 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+#systemlogin_panel{
+    width: 100%;
+    max-height: 792px;
+    min-height: 792px;
+    position: relative;
+    overflow: hidden;
+}
+#background_ball{
+    width: 200vh;
+    height: 200vh;
+    position: absolute;
+    border-radius: 50%;
+    transition: 1.2s ease;
+    background: linear-gradient(45deg,#114fee,#7C9BF0);
+    overflow: hidden;
+    z-index: 1;
+}
+.login_ball{
+    left: -50%;
+    top: -100%;
+}
+.register_ball{
+    left: 50vw;
+    top: -100%;
+}
+.re_tipbox,.lo_tipbox{
+    position: absolute;
+    top: 30%;
+    width: 250px;
+    font-weight: bold;
+    color: white;
+    font-size: 25px;
+    transition: 1.2s ease;
+    z-index: 2;
+}
+.tipbox1_active{
+    left: 15%;
+}
+.tipbox1_inactive{
+    left: -15%;
+}
+.tipbox2_active{
+    left: 75%;
+}
+.tipbox2_inactive{
+    left: 115%;
+}
+.re_tipbox div,.lo_tipbox div{
+    margin: 25px 0;
+}
+.tipbox_button{
+    background: transparent;
+    color: white;
+    border-radius: 25px;
+    width: 150px;
+    height: 40px;
+    font-weight: bold;
+    border: 2px solid white !important;
+}
+.tipbox_button:hover{
+    color: white !important;
+    border: 2px solid white !important;
+}
+#systemlogin_login,#systemlogin_register{
+    width: 50%;
+    position: absolute;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: 1.0s ease;
+}
+.systemlogin_login_active{
+    left: 50%;
+    opacity: 100%;
+    z-index: 0;
+}
+.systemlogin_login_inactive{
+    left: 0%;
+    opacity: 0%;
+    z-index: -1;
+}
+.systemlogin_register_active{
+    left: 0%;
+    opacity: 100%;
+    z-index: 0;
+}
+.systemlogin_register_inactive{
+    left: 50%;
+    opacity: 0%;
+    z-index: -1;
+}
+#systemlogin_login>span:first-child,#systemlogin_register>span:first-child{
+    display: block;
+    font-size: 35px;
+    font-weight: bold;
+    letter-spacing: 5px;
+}
+.systemlogin_input{
+    width: 350px;
+    height: 60px;
+    margin: 15px 0px;
+    border-radius: 25px;
+    color:rgba(0,0,0,25%);
+    font-size: 18px;
+}
+#systemlogin_register .systemlogin_input{
+    height: 45px;
+}
+.systemlogin_confirm{
+    margin-top: 15px;
+    width: 150px;
+    height: 50px;
+    border-radius: 25px;
+    border: none;
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    padding-left: 5px;
+    color: white;
+    background: linear-gradient(45deg,#7C9BF0,#114fee);
+    background-size: 200% 200%;
+    background-position: 0% 0%;
+    transition: 0.6s ease;
+    text-align: center !important;
+    cursor: pointer;
+}
+.systemlogin_confirm:hover{
+    background-position: 100% 100%;
+}
+.ant-input-prefix img{
+    width: 20px;
+    height: 20px;
+}
+#systemlogin_panel_title{
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    letter-spacing: 1px;
+    font-weight: bold;
+    transition: 1.2s ease;
+}
+.title_active{
+    color: white;
+}
+.title_inactive{
+    color: black;
+}
+#systemlogin_panel_title .icon{
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 10px;
+}

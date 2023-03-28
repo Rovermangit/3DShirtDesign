@@ -1,13 +1,13 @@
 
 const initState = {
-    shirtColor:'0'
+    userData:{}
 }
 export function ModalReducer(preState = initState,action){
     const {type,payload} = action;
     switch(type){
-        case 'changeShirtScheme':
-            preState.shirtColor = payload;
-            return preState
+        case 'updateUserData':
+            preState.userData = payload;
+            return JSON.parse(JSON.stringify(preState));
         default:
             return preState
     }

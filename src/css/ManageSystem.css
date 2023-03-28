@@ -1,0 +1,299 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+#managesystem_panel{
+    width: 100%;
+    display: flex;
+    max-height: 100vh;
+    min-height: 100vh;
+    background: rgba(210, 210, 210,20%);
+}
+#managesystem_panel_left{
+    width: 15%;
+    max-height: 100vh;
+    min-height: 100vh;
+
+}
+#managesystem_panel_right{
+    width: 85%;
+    max-height: 100vh;
+    min-height: 100vh;
+}
+#managesystem_panel_title .icon{
+    width: 25px;
+    height: 25px;  
+    margin-right: 5px;    
+}
+#managesystem_panel_title{
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 5vh;
+    min-height: 45px;
+    font-weight: bold;
+    font-family: "三极则木简体";
+    margin: 5px 0px;
+    border-right: 1px solid rgba(0, 0, 0, 4%);
+}
+.managesystem_panel_menu{
+    width: 100%;
+    background: transparent;
+    max-height: 93vh;
+    min-height: 93vh;
+    font-size: 16px;
+}
+.managesystem_panel_menu .ant-menu-item{
+    display: flex;
+    align-items: center;
+    height: 45px;
+    position: relative;
+    overflow: hidden;
+}
+.ant-menu-item span{
+    margin-left: -8px !important;
+}
+.managesystem_panel_menu .ant-menu-item .managesystem_panel_icon{
+    position: relative;
+    top:-50px;
+    filter:drop-shadow(0 50px 0 #707070);
+}
+.ant-menu-item-selected{
+    background: rgba(210, 210, 210,20%) !important;
+    outline: none !important;
+    color: #7C9BF0 !important;
+}
+.managesystem_panel_menu .ant-menu-item-selected .managesystem_panel_icon{
+    filter:drop-shadow(0 50px 0 #7C9BF0);
+}
+.managesystem_panel_icon{
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+}
+.managesystem_panel_right_nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 95%;
+    margin: 5px 30px;
+    height: 5vh;
+    min-height: 50px;
+}
+.menu_collapse_icon svg{
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+.menu_collapse_icon path{
+    fill: #707070;
+}
+.managesystem_panel_path{
+    width: 45%;
+    text-align: left;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 64%);
+}
+.managesystem_panel_searchbox{
+    width: 250px;
+}
+.managesystem_panel_welcome{
+    max-width: 150px;
+    min-width: 150px;
+    text-overflow: ellipsis;
+    white-space:nowrap;
+    overflow: hidden;
+}
+
+.system_tab_detail_panel{
+    width: 100%;
+    height: 87vh;
+    overflow: hidden;
+    background: white;
+    margin-top: -15px;
+}
+#userdata_ope_bar{
+    text-align: left;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+}
+#userdata_ope_bar button{
+    margin: 0px 5px;
+}
+.userdata_row_ope button{
+    margin: 0px 5px;
+}
+.edit_form{
+    width: 90%;
+    margin:30px 5%;
+}
+.drag_panel path{
+   fill: #707070;
+}
+.drag_panel svg{
+    width: 30px;
+    height: 30px;
+}
+.system_add_button{
+    color: #7C9BF0;
+    border: 1px solid rgb(16, 142, 233);
+}
+.system_edit_button{
+    color: green;
+    border: 1px solid #87d068;
+}
+.system_edit_button:hover{
+    color: #87d068 !important;
+    border: 1px solid #87d068 !important;
+}
+#userdata_ope_table .avatar{
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+}
+.filter_panel{
+    width: 200px;
+}
+.filter_panel .search_box{
+    width: 90%;
+    margin: 10px 5%;
+}
+.filter_panel .ope_box{
+    width: 90%;
+    margin-left: 5%;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.shirt_data_panel{
+    display: flex;
+    background: rgba(0, 0, 0, 0.5%);
+}
+.system_tab_detail_panel #shirtdata_panel_left,.system_tab_detail_panel #shirtdata_panel_right{
+    height: 90%;
+    margin: 2%;
+    width: 70%;
+}
+.system_tab_detail_panel #shirtdata_panel_left{
+    width: 22%;
+}
+#shirtdata_type_panel,#shirtdata_data_panel{
+    width: 100%;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+}
+#shirtdata_type_panel li,#shirtdata_data_panel li{
+    width: 30%;
+    margin: 10px 1.5%;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 10px 0px;
+    transition: 0.4s ease;
+    border-radius: 5px;
+}
+#shirtdata_data_panel li{
+    width: 17%;
+    padding: 20px 0px;
+    position: relative;
+}
+#shirtdata_type_panel li:hover,.cur_selected_li,#shirtdata_data_panel li:hover{
+    background: rgba(0, 0, 0, 4%) !important;
+}
+#shirtdata_type_panel li img,#shirtdata_data_panel li img{
+    width: 50%;
+    margin-left: 25%;
+    height: auto;
+    display: block;
+}
+#shirtdata_data_panel li img{
+    width: 30%;
+    margin-left: 35%;
+}
+#shirtdata_panel_detail{
+    position: absolute;
+    left: 28%;
+    top: 3.8%;
+    width: 70%;
+    height: 90%;
+    overflow: scroll;
+}
+#shirtdata_panel_detail::-webkit-scrollbar{
+    display: none;
+}
+#shirtdata_data_detail_panel{
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
+    list-style: none;
+}
+#shirtdata_data_detail_panel li{
+    width: 28%;
+    font-size: 12px;
+    margin: 10px 2%;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+}
+#shirtdata_data_detail_panel .img_box{
+    width: 100% ;
+    height:250px;
+    background-size: 90% 90% !important;
+    background-position: 50% 50% !important;
+    background-repeat: no-repeat !important;
+}
+#shirtdata_data_detail_panel .content_box>div{
+    margin: 5px 0px;
+}
+#shirtdata_data_detail_panel .content_box>div:first-child{
+    font-size: 13px;
+    text-align: left !important;
+    color: rgba(0, 0, 0, 64%);
+}
+#shirtdata_data_detail_panel .content_box .price span{
+    font-size: 16px;
+    font-weight: bold;
+    color: #7C9BF0;
+    text-decoration: underline;
+}
+#shirtdata_data_detail_panel .ope_box{
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#shirtdata_data_detail_panel .ope_box .ope_box_detail{
+    width: 25px;
+    height: 25px;
+    display: flex;
+    margin: 0px 2px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: solid 1px rgba(0, 0, 0, 32%);
+    overflow: hidden;
+    transition: 0.4s ease;
+    background: white;
+}
+#shirtdata_data_detail_panel .ope_box img{
+    width: 18px;
+    height: 18px;
+    position: relative;
+    top: -50px;
+    filter: drop-shadow(0 50px 0 rgba(0,0,0,32%));
+}
+#shirtdata_data_detail_panel .ope_box_detail:hover{
+    background: #7C9BF0;
+    border: solid 1px #7C9BF0;
+}
+#shirtdata_data_detail_panel .ope_box_detail:hover img{
+    filter: drop-shadow(0 50px 0 white);
+}

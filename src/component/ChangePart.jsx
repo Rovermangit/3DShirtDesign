@@ -344,10 +344,3 @@ export class ChangePartContent extends React.Component {
         )
     }
 }
-//使用redux不起作用，暂不使用，仅通过props实现祖先传值
-// const mapDispatchToProps = (dispatch)=>{
-//     return {
-//         mychangeShirtScheme(data){dispatch(changeShirtScheme(data))}
-//     }
-// }
-// export default connect({},mapDispatchToProps)(ChangePartContent)
