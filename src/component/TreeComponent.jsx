@@ -63,13 +63,16 @@ export default class TreeComponent extends React.Component {
                 }
             }
         },false);
+        if(this.props.data){
+            this.setState({myData:[].concat(this.props.data)});
+        }
     }
     //设置右键菜单显示以及位置设置
     showTreeEdit = ({ event, node }) => {
         let e = event.nativeEvent;
         let { selectedKeys } = this.state;
         this.setState(state => {
-            state.rightClickPanelPosX = e.clientX - 250;
+            state.rightClickPanelPosX = this.props.leftExpandState?e.clientX - 250:e.clientX;
             state.rightClickPanelPosY = e.clientY;
             state.rightClickPanelState = true;
             return state;
@@ -231,7 +234,6 @@ export default class TreeComponent extends React.Component {
                 }
             }
         }
-        //！！！重要：antd的tree更新数据存在bug，需要重新Array.from才可使数据实时更新
         myData = Array.from(myData);
         //不论是复制还是剪切，粘贴完成后要将该值设置为复制，防止key值重复
         pasteType = 'copy';
@@ -404,7 +406,7 @@ export default class TreeComponent extends React.Component {
         const { myData, treeEditOptions, oddEditOptions, rightClickPanelPosX, rightClickPanelPosY, rightClickPanelState, selectedKeys, expandedKeys } = this.state;
         return (
             <>
-                <DirectoryTree onSelect={this.onSelect} onExpand={this.onExpand} className="myTreePanel" selectedKeys={selectedKeys} expandedKeys={expandedKeys} multiple defaultExpandAll blockNode onRightClick={this.showTreeEdit} treeData={myData}>
+                <DirectoryTree defaultExpandedKeys={this.props.defaultExpandedKeys?this.props.defaultExpandedKeys:[]}  onSelect={this.onSelect} onExpand={this.onExpand} className="myTreePanel" selectedKeys={selectedKeys} expandedKeys={expandedKeys} multiple defaultExpandAll blockNode onRightClick={this.showTreeEdit} treeData={myData}>
                 </DirectoryTree>
                 <ul id="tree_edit" onBlur={this.closeTreeEdit} className="tree_edit" style={{ display: rightClickPanelState ? 'block' : 'none', left: rightClickPanelPosX, top: rightClickPanelPosY }}>
                     {treeEditOptions && treeEditOptions.map(item => {

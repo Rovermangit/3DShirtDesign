@@ -151,8 +151,8 @@
     border: 1px solid #87d068 !important;
 }
 #userdata_ope_table .avatar{
-    width: 45px;
-    height: 45px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
 }
 .filter_panel{
@@ -200,6 +200,34 @@
     width: 17%;
     padding: 20px 0px;
     position: relative;
+}
+#shirtdata_data_panel li:hover .hover_img{
+    left: 80%;
+    top: 20px;
+    opacity: 100%;
+    z-index: 1;
+}
+#shirtdata_data_panel li:hover .hover_img2{
+    left: 80%;
+    top: 80%;
+    opacity: 100%;
+    z-index: 100;
+}
+.hover_img{
+    width: 25px !important;
+    height: 25px !important;
+    position: absolute;
+    border-radius: 50%;
+    border:1px solid rgba(0, 0, 0, 32%);
+    left: 50%;
+    top:50%;
+    transform: translate(-50%,-50%);
+    transition: 0.4s ease;
+    background-size: 70% 70% !important;
+    background-position: 50% 50% !important;
+    background-repeat: no-repeat !important;
+    opacity: 0%;
+    z-index: -1;
 }
 #shirtdata_type_panel li:hover,.cur_selected_li,#shirtdata_data_panel li:hover{
     background: rgba(0, 0, 0, 4%) !important;
@@ -296,4 +324,211 @@
 }
 #shirtdata_data_detail_panel .ope_box_detail:hover img{
     filter: drop-shadow(0 50px 0 white);
+}
+#myshaking_animation{
+    animation: shaking 1.0s 0.4s ease infinite;
+}
+#myrotating_animation{
+    animation: rotating 1s linear infinite;
+}
+.table_ope_bar{
+    width: 100%;
+    text-align: left;
+    margin: 5px 0px;
+    padding-left: 15px;
+}
+.table_ope_bar button{
+    margin-right: 10px;
+}
+@keyframes rotating {
+    100%{
+        transform: rotate(360deg);
+    }
+}
+@keyframes shaking {
+    0%{
+        transform: scale(1,1) rotate(0deg);
+    }
+    15%{
+        transform: scale(1.2,1.2) rotate(-5deg);
+    }
+    30%{
+        transform: scale(1.2,1.2) rotate(5deg);
+    }
+    45%{
+        transform: scale(1.2,1.2) rotate(-5deg);
+    }
+    60%{
+        transform: scale(1.2,1.2) rotate(5deg);
+    }
+}
+
+.platform_img_ope_panel{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+#platform_img_ope_panel_left{
+    width: 20%;
+    height: 95%;
+    box-shadow: 1px 1px 3px 3px rgba(0, 0, 0, 4%);
+    border-radius: 5px;
+}
+#platform_img_ope_panel_right{
+    width: 75%;
+    height: 95%;
+    box-shadow: 1px 1px 3px 3px rgba(0, 0, 0, 4%);
+    border-radius: 5px;
+}
+#platform_img_ope_panel_left .myTreePanel{
+    max-height: 100%;
+    min-height: 100%;
+}
+.platformimgs_imgbox{
+    width: 50px;
+    height: 50px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    background-size: 100% auto !important;
+    background-repeat:no-repeat !important;
+    background-position: 50% 50% !important;
+    overflow: hidden;
+    background-color: rgb(253,253,253);
+}
+.platformimgs_imgbox2{
+    width: 100px;
+}
+.hot_sale{
+    color:red;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+}
+.hot_sale img{
+    width: 20px;
+    height: 20px;
+}
+#platform_img_ope_panel_right_bar{
+    width: 100%;
+    height: 50px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+    background: rgb(251,251,251);
+}
+#platform_img_ope_panel_right_bar>button{
+    margin: 0px 5px;
+}
+.inrow_opebox{
+    margin:0px 5px;
+    cursor: pointer;
+    margin:0px 2px;
+    text-decoration: none;
+    transition: 0.4s ease;
+}
+.inrow_opebox:hover{
+    text-decoration: underline;
+    color: #7C9BF0;
+}
+.platform_modal_panel{
+    width: 700px;
+    display: flex;
+    position: relative;
+    flex-wrap: wrap;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.platform_modal_panel>div{
+    width: 45%;
+    margin:15px 2.5%;
+    height: 300px;
+}
+.platform_modal_panel_left .upload_box .ant-upload{
+    height: 90% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.platform_modal_panel_bottom{
+    margin-top: -35px !important;
+    width: 100% !important;
+    height: 150px !important;
+}
+.platform_modal_item{
+    display: flex;
+    align-items: center;
+    margin: 7px 0px;
+}
+.platform_modal_item>span:first-child{
+    display: block;
+    width: 75px;
+}
+.platform_modal_item .inputbox{
+    width: 250px;
+}
+.platform_modal_panel_btnbox{
+    height:25px !important;
+    margin-top: -15px !important;
+    width: 100% !important;
+    text-align: right;
+}
+.platform_modal_panel_btnbox button{
+    margin-left: 15px;
+}
+.userproject_panel_form{
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 12.5px 0px;
+}
+.system_tab_detail_panel_top{
+    width: 100%;
+    background: rgb(251,251,251);
+    transition: 0.4s ease;
+}
+.userproject_panel_form .ant-form-item{
+    width: 30%;
+}
+.userproject_panel_form .ant-form-item .project_input{
+    width:80%;
+}
+.userproject_panel_form .ant-form-item .project_date{
+    width: 100%;
+}
+.project_ope_bar{
+    width: 100%;
+    text-align: left;
+    padding-left: 20%;
+}
+.project_ope_bar button{
+    margin-left: 20px;
+}
+.userproject_panel_form .date_item{
+    width: 39%;
+}
+
+.record_ellapse{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.user_modal{
+    width: 60%;
+}
+.user_form{
+    width: 100% !important;
+    display: flex;
+    flex-wrap: wrap;
+
+}
+.user_form .ant-form-item{
+    width: 50%;
+    margin: 15px 0px !important;
+}
+.edit_form_btn{
+    width: 100% !important;
+    text-align: right;
 }

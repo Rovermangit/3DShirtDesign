@@ -67,8 +67,11 @@
     justify-content: start;
     align-items: center;
     flex-wrap: wrap;
-    max-height: 300px;
+    max-height: 250px;
     overflow: scroll;
+}
+.content_box_detail_self{
+    max-height: 125px;
 }
 .content_box_detail::-webkit-scrollbar{
     display: none;

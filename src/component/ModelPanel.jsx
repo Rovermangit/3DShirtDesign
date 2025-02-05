@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { ChangePart } from './ChangePart';
 import { EditPanel } from './EditPanel';
 import { fabric } from 'fabric';
-import { Select,message,Dropdown,Rate,Divider, Button,Modal,Form,Input,Space,Switch,InputNumber } from 'antd';
+import { Select,message,Dropdown,Rate,Divider, Button,Modal,Form,Input,Space,Switch,InputNumber,notification } from 'antd';
 import { debounce } from 'lodash';
 import { nanoid } from 'nanoid';
 import { picData } from '../data/picData';
@@ -18,11 +18,6 @@ import TreeComponent from './TreeComponent';
 import PatternPanel from './PatternPanel';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import {blockChain,_ntfMarket,ntfMarketAbi,_ntfContract,ntfContractAbi,chainDeployer} from "../data/blockData.js";
-const Web3 = require("web3");
-const web3 = new Web3(new Web3.providers.HttpProvider(blockChain));
-const ntfMarket = new web3.eth.Contract(JSON.parse(ntfMarketAbi),_ntfMarket);
-const ntfContract = new web3.eth.Contract(JSON.parse(ntfContractAbi),_ntfContract);
 const host = 'http://localhost:4444'
 const { Option } = Select;
 //在保存为json格式时仍然包含的属性并不包含一些需要包含的关键属性，故需要进行拓展
@@ -43,6 +38,11 @@ fabric.Object.prototype.toObject = (function (toObject) {
         });
     };
 })(fabric.Object.prototype.toObject);
+
+//设置选框样式
+fabric.Object.prototype.cornerStyle = 'circle';
+fabric.Object.prototype.cornerColor = 'white';
+fabric.Object.prototype.cornerSize = 10;
 //！！！当前仅限根目录节点选择操作！！！
 export default class ModelControl extends React.Component {
     init3DScene = () => {
@@ -79,6 +79,8 @@ export default class ModelControl extends React.Component {
             this.shirt.receiveShadow = true;
             this.shirt.add(gltf.scene);
             this.scene.add(this.shirt);
+            //初始化模型图案
+            this.setShirtTexture();
         })
         //初始化基础灯源
         this.scene.add(new THREE.AmbientLight(0xdddddd));
@@ -89,7 +91,7 @@ export default class ModelControl extends React.Component {
         //初始化渲染器
         this.renderer = new THREE.WebGLRenderer({ antialias: true,preserveDrawingBuffer: true });
         const renderer = this.renderer;
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
         //设置渲染器阴影效果
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -105,7 +107,7 @@ export default class ModelControl extends React.Component {
         trackballControls.noZoom = false;
         trackballControls.noPan = false;
         trackballControls.dynamicDampingFactor = 0.3
-        trackballControls.keys = [65, 83, 68]
+        trackballControls.keys = [65, 83, 68];
     }
     //3d场景渲染函数
     myRender = () => {
@@ -120,14 +122,13 @@ export default class ModelControl extends React.Component {
     onWindowResize = () => {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
     }
     //组件挂载完成执行的回调函数
     async componentDidMount() {
         //设置随机初始卫衣
         let shirts = ['SWBLJYL','SWHOSLJ','SWBQMLJ','SWBZXDM'];
         this.setState({shirtid:shirts[parseInt(Math.random()*4)]},()=>{
-            this.checkLoginStatus();
             this.setInitialPrice();
             this.init3DScene();
             this.myRender();
@@ -142,6 +143,29 @@ export default class ModelControl extends React.Component {
     //组件卸载前执行的回调函数
     componentWillUnmount() {
         document.removeEventListener('resize', this.onWindowResize);
+    }
+    //获取当前用户所有购买的图片，并加入至用户已购图片中
+    getCurUserImgs =()=>{
+        let {user,oDataForPicChg} = this.state;
+        axios.get(`${host}/getUserImgsData`,{
+            params:{
+                userid:user.userid
+            }
+        }).then((res)=>{
+            let {data} = res;
+            data = data.map(item=>{
+                item.tempUpload = true;
+                item.hoverIfo = item.imgname;
+                item.title = item.imgname;
+                item.userType = 1;
+                item.src = `${host}/getStaSource?sourceUrl=${item.imgurl}`;
+                item.value = item.src;
+                item.isOriginImg = true;
+                return item;
+            });
+            let newPicData =  data.concat(picData);
+            this.setState({oDataForPicChg:{...oDataForPicChg,data:newPicData}});
+        })
     }
     state = {
         leftExpandIcon: 'left_panel_close.svg',
@@ -162,9 +186,9 @@ export default class ModelControl extends React.Component {
         oDataForModelChg: {
             showType: 0,
             itemsPerRow: 4,
-            onlyOfficial: false,
+            onlyOfficial: true,
             canBeUpload: false,
-            onClickFn: 'openEditPanel',
+            onClickFn: (values)=>{this.openEditPanel(values)},
             data: [
                 { src: 'picForModel/polo_shirt.svg', title: 'POLO衫', hoverIfo: 'Polo衫', userType: 0, value: 'polo_shirt' },
                 { src: 'picForModel/T-shirt.svg', title: 'T恤', hoverIfo: 'T恤', userType: 0, value: 'T_shirt' },
@@ -181,7 +205,8 @@ export default class ModelControl extends React.Component {
             itemsPerRow: 4,
             onlyOfficial: false,
             canBeUpload: true,
-            onClickFn: 'addShirtPattern',
+            onClickFn: (values)=>{this.addShirtPattern(values)},
+            uploadSource: 'image',
             data: picData
         },
         oDataForTextAdd: {
@@ -189,16 +214,17 @@ export default class ModelControl extends React.Component {
             itemsPerRow: 0,
             onlyOfficial: true,
             canBeUpload: false,
-            onClickFn: 'addTextContent',
+            onClickFn: (values)=>this.addTextContent(values),
             isOddContent: true
         },
         oDataForMyProject: {
             showType: 0,
             itemsPerRow: 4,
-            onlyOfficial: true,
-            canBeUpload: false,
+            onlyOfficial: false,
+            canBeUpload: true,
+            uploadSource: 'json',
             data:[],
-            onClickFn: 'openExistsProject',
+            onClickFn: (values)=>this.openExistsProject(values),
         },
         myData: [],
         cancelSelectedType:'canvas',
@@ -228,6 +254,7 @@ export default class ModelControl extends React.Component {
             {key:'dropItem_2',src:require("../pic/ModelPanel/message_detail.svg").default,title:'我的消息',onclick:()=>this.jumpLink2.click()},
             {key:'dropItem_3',src:require("../pic/ModelPanel/project_detail.svg").default,title:'我的项目',onclick:()=>this.jumpLink2.click()},
             {key:'dropItem_4',src:require("../pic/ModelPanel/collect_detail.svg").default,title:'我的收藏',onclick:()=>this.jumpLink2.click()},
+            {key:'dropItem_5',src:require("../pic/ModelPanel/selfdetail_imgs.svg").default,title:'我的图案',onclick:()=>this.jumpLink2.click()},
             {key:'dropItem_6',src:require("../pic/ModelPanel/login_out.svg").default,title:'退出登录',onclick:()=>this.loginOutFn()},
         ],
         //项目保存面板状态
@@ -258,7 +285,7 @@ export default class ModelControl extends React.Component {
             back: {
                 x: 0, z: -200, y: 0
             }
-        }
+        },
     }
     //移动镜头到指定位置
     animateCamera = (direction)=>{
@@ -309,21 +336,11 @@ export default class ModelControl extends React.Component {
             this.jumpLink.click();
         })
     }
-    //检查当前是否已经登录
-    checkLoginStatus = ()=>{
-        let userData = localStorage.getItem("commonUserData");
-        if(!userData){
-            message.error("当前未登录，即将为您跳转到登录界面");
-            if(this.jumpLink)setTimeout(()=>this.jumpLink.click(),3000);
-        }else{
-            this.setState({user:JSON.parse(userData)},()=>{
-                this.getCurUserProjectData();
-            });
-        }
-    }
     //切换左部操作栏显示状态
     changeLeftPanel = () => {
         this.setState(state => {
+            this.canvas.renderAndReset();
+            
             state.leftExpandState = !state.leftExpandState;
             if (state.leftExpandState) state.leftExpandIcon = 'left_panel_close.svg';
             else state.leftExpandIcon = 'left_panel_open.svg';
@@ -358,18 +375,24 @@ export default class ModelControl extends React.Component {
             state.curShirtPart = this.modelParts[0];
             return state;
         })
+        //获取临时颜色
         for (let picItem of this.modelParts) {
             fabric.Image.fromURL(require(`../modal/${picItem.src}`), function (newImg) {
                 //以2k图像导出后以0.302尺寸缩放处理图像较为准确
-                newImg.scale(0.302);
+                newImg.scale(0.303);
                 newImg.id = picItem.key;
                 newImg._myType = 'modelPart';
                 newImg.set('selectable', false);
+                newImg.filters = [new fabric.Image.filters.BlendColor({
+                    color:"#9d9d9d",
+                    mode: 'tint',
+                })]
+                newImg.applyFilters();
                 canvas.add(newImg);
             })
         }
         //取消所有选择后触发
-        //存在快速操作的bug（暂无法修理）
+        //存在快速操作的bug
         canvas.on("selection:cleared", _ => {
             let {cancelSelectedType,curElementData} = this.state;
             if(cancelSelectedType !== 'tree'){
@@ -469,27 +492,47 @@ export default class ModelControl extends React.Component {
         })
     }
     //添加贴图到模型上
-    addShirtPattern = (imgSrc) => {
+    addShirtPattern = (imgData) => {
         const canvas = this.canvas;
         let {imgIdx,curPrice} = this.state;
-        //判别当前图片数据是网站自带图片数据还是用户临时自上传图片，若为自上传则已在图片数据最开始处增加了@@@字符串
-        fabric.Image.fromURL(imgSrc.indexOf('@@@') >= 0 ? imgSrc.substring(3) : require(`../pic/ModelPanel/${imgSrc}`), (img)=>{
-            if (img.width > 50 || img.height > 50) img.scale(0.5);
-            curPrice += 5.5;
-            img._myPrice = 5.5;
-            //设置img的key为唯一标识
-            img.key = nanoid();
-            imgIdx += 1;
-            img.title = '图案_'+imgIdx;
-            img._myType = 'pattern';
-            canvas.add(img);
-            canvas.centerObject(img);
-            canvas.setActiveObject(img);
-            let object = {key:img.key,title:img.title,isLeaf:true};
-            this.treeComponent.addTreeData((object));
-            this.setState({imgIdx,curPrice});
+        let {dataSrc,isOfficial,isOriginImg} = imgData;
+        new Promise(resolve=>{
+            if(isOfficial){
+                dataSrc = require(`../pic/ModelPanel/${dataSrc}`);
+                resolve(dataSrc);
+            }else if(isOriginImg){
+                axios.get(dataSrc.substring(3),{responseType:'blob'}).then(res=>{
+                    let tempReader = new FileReader();
+                    tempReader.readAsDataURL(res.data);
+                    tempReader.onload = (e)=>{
+                        dataSrc = e.target.result;
+                        resolve(dataSrc);
+                    }
+                })
+            }else{
+                dataSrc = dataSrc.substring(3);
+                resolve(dataSrc);
+            }
+        }).then(()=>{
+            //判别当前图片数据是网站自带图片数据还是用户临时自上传图片，若为自上传则已在图片数据最开始处增加了@@@字符串
+            fabric.Image.fromURL((dataSrc), (img)=>{
+                if (img.width > 50 || img.height > 50) img.scale(0.5);
+                curPrice += 5.5;
+                img._myPrice = 5.5;
+                //设置img的key为唯一标识
+                img.key = nanoid();
+                imgIdx += 1;
+                img.title = '图案_'+imgIdx;
+                img._myType = 'pattern';
+                canvas.add(img);
+                canvas.centerObject(img);
+                canvas.setActiveObject(img);
+                let object = {key:img.key,title:img.title,isLeaf:true};
+                this.treeComponent.addTreeData((object));
+                this.setState({imgIdx,curPrice});
+            })
+            canvas.renderAll();
         })
-        canvas.renderAll();
     }
     //切换图案的颜色
     changeTextureColor = (value) => {
@@ -510,7 +553,7 @@ export default class ModelControl extends React.Component {
     }
     //修改衣衫部分颜色函数
     changeShirtPartColor = (value) => {
-        const {curShirtPart} = this.state;
+        let {curShirtPart} = this.state;
         let color = value;
         const canvas = this.canvas;
         let objects = canvas.getObjects();
@@ -541,11 +584,9 @@ export default class ModelControl extends React.Component {
                 break;
             }
         }
+        curShirtPart = {...curShirtPart,color};
         //同时需对当前的curShirtPart进行颜色的更改，触发页面更新
-        this.setState(state=>{
-            state.curShirtPart.color = color;
-            return state;
-        })
+        this.setState({curShirtPart});
         curPart.applyFilters();
         canvas.renderAll();
         this.setShirtTexture();
@@ -786,7 +827,7 @@ export default class ModelControl extends React.Component {
                 this.exportCurPic();
                 break;
             case 'applyCurPic':
-                this.applyCurPic();
+                // this.applyCurPic();
                 break;
             case 'saveCurProject':
                 this.saveCurProject();
@@ -895,61 +936,62 @@ export default class ModelControl extends React.Component {
         tmp.click();
     }
     //申请专利函数
-    applyCurPic = ()=>{
-        let applyForCopyRightPic = this.exportCurPic(true);
-        let {user} = this.state;
-        //通过后端开启子线程调用python文件进行图片筛查
-        axios.post(`${host}/picSearch`,{
-            imgData:applyForCopyRightPic,
-            userid:user.userid       
-        }).then(async (res)=>{
-            let {data} = res;
-            if(!data.result){
-                message.error(`当前所申请图案存在疑似雷同图，疑似度为${data.confidence}，请在冷却期过后重新上传或申请人工复核`)
-            }else{
-                let token_id = await ntfContract.methods.mintNFT(user.accountaddress,data.sourcepic).send({from:chainDeployer,gas:'1000000'});
-                token_id = +token_id.events.NFTMinted.returnValues.tokenId;
-                this.setState({applyPicModalOpenStatus:true,curApplyPic:{...data,token_id}})
-                message.success(`申请成功！请问您是否要加入到平台图片市场以获取额外收益呢？`);
-            }
-        })
-    }
+    // applyCurPic = ()=>{
+    //     let applyForCopyRightPic = this.exportCurPic(true);
+    //     let {user} = this.state;
+    //     notification.info({placement:'top',description:'申请中！请稍后~',message:'版权申请提醒',duration:1})
+    //     //通过后端开启子线程调用python文件进行图片筛查
+    //     axios.post(`${host}/picSearch`,{
+    //         imgData:applyForCopyRightPic,
+    //         userid:user.userid       
+    //     }).then(async (res)=>{
+    //         let {data} = res;
+    //         if(!data.result){
+    //             message.error(`当前所申请图案存在疑似雷同图，疑似度为${data.confidence}，请在冷却期过后重新上传或申请人工复核`)
+    //         }else{
+    //             let token_id = await ntfContract.methods.mintNFT(user.accountaddress,data.sourcepic).send({from:chainDeployer,gas:'1000000'});
+    //             token_id = +token_id.events.NFTMinted.returnValues.tokenId;
+    //             this.setState({applyPicModalOpenStatus:true,curApplyPic:{...data,token_id}})
+    //             message.success(`申请成功！请问您是否要加入到平台图片市场以获取额外收益呢？`);
+    //         }
+    //     })
+    // }
     //关闭版权申请详情面板
     closeApplyCopyrightModal = ()=>{
         this.setState({applyPicModalOpenStatus:false});
     }
     //点击提交版权详情
     submitCopyrightDetail = async(values)=>{
-        //提交时默认值设置
-        values.isallowshop = values.isallowshop === undefined || values.isallowshop === true?1:0;
-        values.description = values.description.length === 0?"暂无描述":values.description;
-        values.copyrightname = values.copyrightname.length === 0?"未命名图像版权":values.copyrightname;
-        values.buyoutprice = values.isallowshop?values.price:0;
-        let {user,curApplyPic} = this.state;
-        try{
-            if(values.isallowshop){
-                //判断是否加入图片市场进行售卖，若加入则需要交易认证，同时设置价格并添加到市场中
-                await ntfContract.methods.approve(_ntfMarket,curApplyPic.token_id).send({from:user.accountaddress,gas:'1000000'});
-                let PRICE = web3.utils.toWei(values.price+'','ether');
-                await ntfMarket.methods.listItem(_ntfContract, curApplyPic.token_id,PRICE).send({from:user.accountaddress,gas:'1000000'});
-            }
-            axios.get(`${host}/addUserCopyright`,{
-                params:{
-                    ...values,
-                    userid:user.userid,
-                    copyrighturl:curApplyPic.sourcepic
-                }
-            }).then((res)=>{
-                let {data}  = res;
-                if(data === 'success'){
-                    message.success("新增成功！请到个人中心查看详情。");
-                    this.applyCopyrightForm.resetFields();
+        // //提交时默认值设置
+        // values.isallowshop = values.isallowshop === undefined || values.isallowshop === true?1:0;
+        // values.description = values.description.length === 0?"暂无描述":values.description;
+        // values.copyrightname = values.copyrightname.length === 0?"未命名图像版权":values.copyrightname;
+        // values.buyoutprice = values.isallowshop?values.price:0;
+        // let {user,curApplyPic} = this.state;
+        // try{
+        //     if(values.isallowshop){
+        //         //判断是否加入图片市场进行售卖，若加入则需要交易认证，同时设置价格并添加到市场中
+        //         await ntfContract.methods.approve(_ntfMarket,curApplyPic.token_id).send({from:user.accountaddress,gas:'1000000'});
+        //         let PRICE = web3.utils.toWei(values.price+'','ether');
+        //         await ntfMarket.methods.listItem(_ntfContract, curApplyPic.token_id,PRICE).send({from:user.accountaddress,gas:'1000000'});
+        //     }
+        //     axios.get(`${host}/addUserCopyright`,{
+        //         params:{
+        //             ...values,
+        //             userid:user.userid,
+        //             copyrighturl:curApplyPic.sourcepic
+        //         }
+        //     }).then((res)=>{
+        //         let {data}  = res;
+        //         if(data === 'success'){
+        //             message.success("新增成功！请到个人中心查看详情。");
+        //             this.applyCopyrightForm.resetFields();
                     this.closeApplyCopyrightModal();
-                }
-            })
-        }catch(err){
-            message.error("加入市场时价格不可低于0元！给予警告一次！");
-        }
+        //         }
+        //     })
+        // }catch(err){
+        //     message.error("加入市场时价格不可低于0元！给予警告一次！");
+        // }
     }
     //确认当前选中图案，将把图案用于元素样式进行直接覆盖,当前仅适用于文字元素
     confirmBgCurPattern = (value)=>{
@@ -964,7 +1006,8 @@ export default class ModelControl extends React.Component {
                     object.fillType = 'pattern';    
                     object.set('fill',new fabric.Pattern({
                         source:img,
-                        repeat:'repeat'
+                        repeat:'repeat',
+                        offset: new fabric.Point(0, 0)
                     }))
                 }
             }
@@ -1208,30 +1251,48 @@ export default class ModelControl extends React.Component {
     }
     //打开我的项目
     openExistsProject = (values)=>{
+        values = values.dataSrc;
         let obj = JSON.parse(values);
         let canvas = this.canvas;
         message.info("数据即将更换，请注意保存内容！");
+        let type = obj.tempUpload;
         //读取服务器端存储的json数据内容，返回前端进行重新读取
-        axios.get(`${host}/readStaSource`,{
-            params:{
-                fileUrl:obj.projecturl
-            }
-        }).then((res)=>{
-            let {data} = res;
-            data = JSON.parse(data);
+        if (type) {
+            let data = obj;
             //重新设置底衫尺寸
-            for(let perObj of data.canvasData.objects){
-                if(perObj._myType === 'modelPart'){
-                    perObj.scaleX = "0.302";
-                    perObj.scaleY = "0.302";
+            for (let perObj of data.canvasData.objects) {
+                if (perObj._myType === 'modelPart') {
+                    perObj.scaleX = "0.303";
+                    perObj.scaleY = "0.303";
                 }
             }
             //canvas与树组件重新加载数据
             canvas.loadFromJSON(data.canvasData);
             this.treeComponent.setInitialData(data.layerData);
-            this.setState({curPrice:data.curPrice});
-            setTimeout(()=>this.setShirtTexture(),100);
-        })
+            this.setState({ curPrice: data.curPrice });
+            setTimeout(() => this.setShirtTexture(), 100);
+        } else {
+            axios.get(`${host}/readStaSource`,{
+                params:{
+                    fileUrl:obj.projecturl
+                }
+            }).then((res)=>{
+                let {data} = res;
+                data = JSON.parse(data);
+                //重新设置底衫尺寸
+                for(let perObj of data.canvasData.objects){
+                    if(perObj._myType === 'modelPart'){
+                        perObj.scaleX = "0.303";
+                        perObj.scaleY = "0.303";
+                    }
+                }
+                //canvas与树组件重新加载数据
+                canvas.loadFromJSON(data.canvasData);
+                this.treeComponent.setInitialData(data.layerData);
+                this.setState({curPrice:data.curPrice});
+                setTimeout(()=>this.setShirtTexture(),100);
+            })
+        }
     }
     //组件挂载渲染函数
     render() {
@@ -1308,7 +1369,7 @@ export default class ModelControl extends React.Component {
                     {/* <ChangePart svg="change_part.svg" title="配件切换" /> */}
                 </div>
                 <img id="left_part_expand_button" className={leftExpandState ? 'left_ope_box_button_active' : 'left_ope_box_button_inactive'} onClick={this.changeLeftPanel} src={require(`../pic/ModelPanel/${leftExpandIcon}`)} alt="暂时无法显示" />
-                <div id="mid_ope_box">
+                <div id="mid_ope_box" className={leftExpandState?'mid_ope_box_close':'mid_ope_box_open'}>
                     <div id="mid_ope_box_canvas_edit">
                         <div className='mid_ope_box_edit_detail'>
                             <div className='mid_ope_box_edit_title'>
@@ -1340,7 +1401,7 @@ export default class ModelControl extends React.Component {
                                 <div className='decoration_line'></div>
                             </div>
                             <div className='mid_ope_box_edit_content'>
-                                <TreeComponent switchExecuteOddFn={this.switchExecuteOddFn} oddEditOptions={oddEditOptions} treeEditCallBack={(data)=>this.treeEditCallBack(data)} selectedFn={(data)=>this.selectedFn(data)} ref={elem=>this.treeComponent = elem}/>
+                                <TreeComponent leftExpandState={leftExpandState} switchExecuteOddFn={this.switchExecuteOddFn} oddEditOptions={oddEditOptions} treeEditCallBack={(data)=>this.treeEditCallBack(data)} selectedFn={(data)=>this.selectedFn(data)} ref={elem=>this.treeComponent = elem}/>
                             </div>
                         </div>
                         <div className='mid_ope_box_edit_detail'>
@@ -1406,7 +1467,7 @@ export default class ModelControl extends React.Component {
                                 </div>
                                 <div className='curelement_selected curelement_selected2'>
                                     <div className='curelement_selected_title'>
-                                        图层操作:
+                                        微调操作:
                                     </div>
                                     <div className='curelement_selected_box'>
                                         <ul className='curelement_movement_ope'>
@@ -1431,7 +1492,7 @@ export default class ModelControl extends React.Component {
                             </div>
                         </div>
                     </div>
-                    <canvas id="modal_canvas"></canvas>
+                    <canvas id="modal_canvas" className={leftExpandState?'canvas_box_close':'canvas_box_open'}></canvas>
                 </div>
                 <div id="right_ope_box">
                     <ul id='right_ope_toolbox'>

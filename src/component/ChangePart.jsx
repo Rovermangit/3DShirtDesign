@@ -47,31 +47,43 @@ export class ChangePart extends React.Component {
     }
 }
 export class ChangePartContent extends React.Component {
-    state = {
-        alreadyUploadList:[], 
-        currentInput:null
+    constructor(props){
+        super(props);
+        this.state = {
+            alreadyUploadList:[], 
+            currentInput:null,
+            data:props.data
+        }
     }
     //监听上传文件变化
-    fileChange = ()=>{
+    fileChange = (type)=>{
         let currentInput = this.currentInput;
         let files = currentInput.files;
+        let {alreadyUploadList} = this.state;
         for (let file of files) {
-            let object = {};
-            object.title = file.name.substring(0, file.name.lastIndexOf('.'));
-            object.hoverIfo = object.title;
-            object.tempUpload = true;
-            let reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (result) => {
-                this.setState(state => {
+            if(file.type.indexOf(type)>=0 && type === 'image'){
+                let object = {title:file.name.substring(0, file.name.lastIndexOf('.')),tempUpload:true};
+                object.hoverIfo = object.title;
+                let reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (result) => {
                     object.value = result.target.result;
                     object.src = result.target.result;
-                    state.alreadyUploadList.push(object);
-                    return state;
-                })
+                    alreadyUploadList.push(object);
+                    this.setState({alreadyUploadList});
+                }
+            }else if(file.type.indexOf(type)>=0 && type === 'json'){
+                let object = {title:file.name.substring(0, file.name.lastIndexOf('.')),src:'project.svg'};
+                object.hoverIfo = object.title;
+                let reader = new FileReader();
+                reader.readAsText(file);
+                reader.onload = (result) => {
+                    object.value = JSON.stringify({...JSON.parse(result.target.result),tempUpload:true});
+                    alreadyUploadList.push(object);
+                    this.setState({alreadyUploadList});
+                }                
             }
         }
-
     }
     componentDidMount = ()=>{
         //判断当前数据是否为文字添加组件数据，若是则在state中添加fontValue
@@ -222,7 +234,7 @@ export class ChangePartContent extends React.Component {
         if(text)this.props.addTextContent(text);
     }
     render() {
-        const data = this.props.data;
+        const {data} = this.state;
         const {alreadyUploadList,fontValue,fontData,isBold,isItalic,hasDl,hasUl,color,textContent} = this.state;
         let odata;
         let pdata;
@@ -258,7 +270,6 @@ export class ChangePartContent extends React.Component {
                 odata = data.data;
             }
         }
-
         return (
             data && data.isOddContent?
             <div className="text_content_box">
@@ -300,13 +311,13 @@ export class ChangePartContent extends React.Component {
                     {/*首先判别仅有官方数据，若如此，则仅显示数据同时不展现官方预设标题*/}
                     <div style={{ display: !data || data.onlyOfficial ? 'none' : 'flex' }}>
                         <img alt="" src={require(`../pic/ModelPanel/official_ver.svg`).default}/>
-                        官方预设
+                        云端数据
                     </div>
                     <div className="content_box_detail">
                         {
                             //若官方数据存在则进行数据遍历，将数据进行依次展示，同时展示样式存在两种
                             odata && odata.map((item, i) =>
-                                <div key={i} style={currentStyle} onClick={()=>data.onClickFn?eval('this.props.'+data.onClickFn+'(item.value)'):{}}>
+                                <div key={i} style={currentStyle} onClick={()=>data.onClickFn?this.props.data.onClickFn({dataSrc:item.value,isOfficial:true}):{}}>
                                     <div className="content_box_detail_imgBox" style={{background: data.showType === 1 ? '#F3F5F6' : '#FFFFFF'}}><img className="content_box_img" src={require(`../pic/ModelPanel/${item.src}`)} alt="图片出错" title={item.hoverIfo} /></div>
                                     <span style={{ textAlign: 'center', fontSize: '12px', color: 'rgba(0,0,0,50%)' }}>{item.title}</span>
                                 </div>
@@ -318,19 +329,19 @@ export class ChangePartContent extends React.Component {
                     {/*判别是否存在个人数据，之后再进行判别是否可进行上传*/}
                     <div style={{ display: !data || data.onlyOfficial ? 'none' : 'flex' ,marginTop:'15px'}}>
                         <img alt="" src={require(`../pic/ModelPanel/private_ver.svg`).default}/>
-                        个人预设
+                        {data.uploadSource === "image"?'已购/本地数据':'本地数据'}
                     </div>
-                    <div className="content_box_detail" style={{ display: !data || data.onlyOfficial ? 'none' : 'flex' }}>
+                    <div className="content_box_detail content_box_detail_self" style={{ display: !data || data.onlyOfficial ? 'none' : 'flex' }}>
                         {/*设置上传框，通过ref绑定后，将其隐藏使其脱离文档流，通过其他按钮点击调用*/}
-                        <input type="file" multiple accept="image/*" onChange={this.fileChange} ref={(element)=>{this.currentInput = element}} style={{display:'none'}}/>
+                        <input type="file" multiple onChange={()=>this.fileChange(data.uploadSource)} ref={(element)=>{this.currentInput = element}} style={{display:'none'}}/>
                         {
                             pdata && pdata.length?
                             pdata.map((item,i)=>
-                                <div key={item.value} style={currentStyle} onClick={item.isUpload? this.getUploadClick:()=>{eval('this.props.'+data.onClickFn+'("@@@"+item.value)')}}>
+                                <div key={item.value} style={currentStyle} onClick={item.isUpload ? this.getUploadClick : data.uploadSource !== 'json' ? ()=>{this.props.data.onClickFn({dataSrc:"@@@"+item.value,isOriginImg:item.isOriginImg})}:()=>{this.props.data.onClickFn({dataSrc:item.value,isOfficial:true})}}>
                                     <div className="content_box_detail_imgBox" style={{background: data.showType === 1 ? '#F3F5F6' : '#FFFFFF'}}>
                                         <img className="content_box_img" src={item.tempUpload?item.src:require(`../pic/ModelPanel/${item.src}`)} alt="图片出错" title={item.hoverIfo} />
                                     </div>
-                                    <img onClick={(e)=>this.getItemDelete(e,item.value)} className="delete_img" style={{display:item.value!=='upload'?'block':'none'}} src={require(`../pic/ModelPanel/delete.svg`).default} alt="图片出错"/>
+                                    <img onClick={(e)=>this.getItemDelete(e,item.value)} className="delete_img" style={{display:item.value!=='upload' && !item.isOriginImg?'block':'none'}} src={require(`../pic/ModelPanel/delete.svg`).default} alt="图片出错"/>
                                     <div style={{ textAlign: 'center', fontSize: '12px', color: 'rgba(0,0,0,50%)' }}>{item.title}</div>
                                 </div>
                             ):

@@ -128,9 +128,9 @@ export class ColorPanel extends React.Component{
                     }
                 }
             }
+            this.props.onChangeFn(state.color);
             return state;
         })
-        this.props.onChangeFn();
     }
     //重置颜色数据
     resetColorData = ()=>{
@@ -194,7 +194,7 @@ export class ColorPanel extends React.Component{
             :''}
             <HexColorPicker id="color_picker" onChange={this.changeCurColor} color={selectNode?selectNode.color:color}/>
             <div id="color_picker_part">
-                当前:<Input type="text" maxLength={6} onChange={this.changeColorInput} onBlur={this.watchColorInput} onPressEnter={this.watchColorInput} id="color_input" value={colorInput}/>
+                当前:<Input type="text" maxLength={7} onChange={this.changeColorInput} onBlur={this.watchColorInput} onPressEnter={this.watchColorInput} id="color_input" value={colorInput}/>
                 <Button onClick={this.changeColorPanelState}>确定</Button>
             </div>
         </div>
