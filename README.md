@@ -4,23 +4,23 @@
 
 ## 平面设计与实时展示
 
-![本地路径](.\\public\readme\1.gif "相对路径演示,上一级目录")
+![1.gif](https://github.com/Rovermangit/3DShirtDesign/raw/main/public/readme/1.gif)
 
 ### `二维设计`
 
 所有图形元素的删改都将在中间画布进行<font color=red>（注：申请专利功能涉及版权交易，已移除）</font>，在完成操作时，右侧将实时展现设计的效果；<br/><br/>
 可添加的元素包括系统自带贴图，文本以及用户贴图自上传；<br/>
-![本地路径](.\\public\readme\2.gif "相对路径演示,上一级目录")
+![2.gif](https://github.com/Rovermangit/3DShirtDesign/raw/main/public/readme/2.gif)
 <br/>
 <br/>
 衣衫各部件都可设置对应颜色；
-![本地路径](.\\public\readme\3.gif "相对路径演示,上一级目录")
+![3.gif](https://github.com/Rovermangit/3DShirtDesign/raw/main/public/readme/3.gif)
 <br/>
 <br/>
 所有元素以树形结构进行展示，节点与图形为绑定关系，还包含快捷键操作；
-![本地路径](.\\public\readme\4.gif "相对路径演示,上一级目录")
+![4.gif](https://github.com/Rovermangit/3DShirtDesign/raw/main/public/readme/4.gif)
 
-## `安装使用`
+## 安装使用
 
 
 ### `npm install`
