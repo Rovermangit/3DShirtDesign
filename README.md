@@ -1,70 +1,36 @@
-# Getting Started with Create React App
+# 3D 衣衫设计工具
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+本3D衣衫设计工具原为毕业设计项目（以react库编写），内容涵盖了从网页主页、底衫选择、图片版权交易（web3.js与python图像相似度处理来实现）、后台管理系统，涉及面过大，现仅提取衣衫设计部分进行展示，通过该平台，用户可以轻松地设计出个性化的服装款式，预览 3D 效果，并进行实时调整；
 
-## Available Scripts
+## 平面设计与实时展示
 
-In the project directory, you can run:
+![本地路径](.\\public\readme\1.gif "相对路径演示,上一级目录")
+
+### `二维设计`
+
+所有图形元素的删改都将在中间画布进行<font color=red>（注：申请专利功能涉及版权交易，已移除）</font>，在完成操作时，右侧将实时展现设计的效果；<br/><br/>
+可添加的元素包括系统自带贴图，文本以及用户贴图自上传；<br/>
+![本地路径](.\\public\readme\2.gif "相对路径演示,上一级目录")
+<br/>
+<br/>
+衣衫各部件都可设置对应颜色；
+![本地路径](.\\public\readme\3.gif "相对路径演示,上一级目录")
+<br/>
+<br/>
+所有元素以树形结构进行展示，节点与图形为绑定关系，还包含快捷键操作；
+![本地路径](.\\public\readme\4.gif "相对路径演示,上一级目录")
+
+## `安装使用`
+
+
+### `npm install`
+
+下载项目所需的相应依赖包；
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+启动项目，即可在本地预览；
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## `注意项`
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+项目所使用衣衫模型已通过Blender处理，以此实现各个部件可替换不同颜色效果；
